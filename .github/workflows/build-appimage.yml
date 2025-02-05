@@ -2,57 +2,16 @@ name: build AppImage
 on: push
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: codestation/vitamtp
-          path: vitamtp
-      - uses: actions/checkout@v4
-        with:
-          repository: codestation/qcma
-          path: qcma
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends build-essential fakeroot devscripts equivs libxml2-dev libusb-1.0-0-dev pkg-config qtbase5-dev qttools5-dev-tools libavformat-dev libswscale-dev libnotify-dev
-      - name: Build libvitamtp
-        run: |
-          cd "${GITHUB_WORKSPACE}"/vitamtp
-          ./autogen.sh
-          ./configure --prefix=/usr
-          make
-          sudo make install
-      - name: Fake libvitamtp-dev package
-        run: |
-          echo "Package: libvitamtp-dev" >> libvitamtp-dev
-          echo "Version: 2.5.9" >> libvitamtp-dev
-          echo "Architecture: all" >> libvitamtp-dev
-          equivs-build libvitamtp-dev
-          sudo dpkg -i libvitamtp-dev_*.deb
-      - name: Build Qcma
-        run: |
-          cd "${GITHUB_WORKSPACE}"/qcma
-          lrelease -qt=qt5 common/resources/translations/*.ts
-          qmake -qt=qt5 qcma.pro PREFIX="/usr"
-          make
-          sudo make install
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build AppImage
         run: |
-          cd "${GITHUB_WORKSPACE}"
-          sudo apt-get install -y file desktop-file-utils libfuse2 qt5-default
-          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/2.0.0-alpha-1-20241106/linuxdeploy-x86_64.AppImage
-          wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/2.0.0-alpha-1-20250119/linuxdeploy-plugin-qt-x86_64.AppImage
-          wget https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/1-alpha-20230713-1/linuxdeploy-plugin-appimage-x86_64.AppImage
-          chmod +x linuxdeploy*.AppImage
-          cp "${GITHUB_WORKSPACE}"/qcma/gui/resources/images/qcma.png ./qcma.png
-          cp "${GITHUB_WORKSPACE}"/qcma/gui/resources/qcma.desktop ./qcma.desktop
-          export APPIMAGE_EXTRACT_AND_RUN=1
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --executable /usr/bin/qcma --icon-file ./qcma.png --desktop-file ./qcma.desktop --plugin qt --output appimage
-          mkdir "${GITHUB_WORKSPACE}"/output
-          mv Qcma*.AppImage "${GITHUB_WORKSPACE}"/output
+          docker buildx build --output=. .
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
           name: Qcma-x86_64.AppImage
-          path: ${{github.workspace}}/output/Qcma-x86_64.AppImage
+          path: ${{github.workspace}}/Qcma-x86_64.AppImage

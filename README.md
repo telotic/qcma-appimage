@@ -25,9 +25,7 @@ This was heavily inspired by the following projects and works:
 ## To build
 
 ```
-docker build -t qcma .
+docker build --output=. .
 ```
 
-Then copy the file out from the Docker image built.
-
-Or just wait for the GitHub Action to finish and download the artifacts.
+Or wait for the GitHub Action to finish and download the artifacts.

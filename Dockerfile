@@ -32,7 +32,7 @@ RUN cd /build/qcma-master \
     && make install
 
 # Start from fresh with only the necessary runtime to reduce image size
-FROM debian:10 as packer
+FROM debian:10 AS packer
 
 COPY --from=builder /usr/bin/qcma* /usr/bin/
 COPY --from=builder /usr/lib/libvitamtp.so.5 /usr/lib/
